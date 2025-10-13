@@ -1,0 +1,76 @@
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.menu-grid-item {
+  background-color: white;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.menu-grid-modal-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0); /* Start transparent for fade-in */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0; /* Initially hidden */
+  pointer-events: none; /* Initially disabled */
+  transition: background-color 0.3s ease-in-out; /* For the background fade */
+}
+
+.menu-grid-modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 600px;
+  position: relative;
+  transform: translateY(-50px); /* Start off-screen */
+  opacity: 0; /* Start invisible */
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+/* Keyframes for the fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px); /* Start off-screen */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0); /* End at normal position */
+  }
+}
+
+/* When the modal is open */
+.menu-grid-modal-background.open {
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.menu-grid-modal-content.open {
+  animation: fadeIn 0.3s ease-in-out forwards; /* Apply the animation */
+}
+
+.menu-grid-modal-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
