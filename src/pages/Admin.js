@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Admin() {
   const [formData, setFormData] = useState({
@@ -9,16 +10,15 @@ function Admin() {
   });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const allergens = ['Fish', 'Shellfish', 'Soy', 'Eggs', 'Gluten', 'Dairy', 'Sesame', 'Halal', 'Pork', 'Spicy', 'Vegetarian', 'Vegan'];
 
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle restrictions (checkboxes)
   const handleRestrictionToggle = (restriction) => {
     setFormData(prev => {
       const restrictions = prev.Restrictions.includes(restriction)
@@ -28,74 +28,124 @@ function Admin() {
     });
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    // Validate form
+    if (!formData.Name.trim() || !formData.Ingredients.trim()) {
+      setError('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await axios.post('http://157.245.221.37:8080/newFood', {
-        ...formData,
-        station: formData.station === "Emily's Garden" ? "Emily's" : formData.station // Map to server format
+      // Send the exact data structure your API expects
+      const payload = {
+        Name: formData.Name.trim(),
+        Ingredients: formData.Ingredients.trim(),
+        Restrictions: formData.Restrictions
+      };
+
+      console.log('Sending payload:', payload); // Debug log
+
+      const response = await axios.post('http://157.245.221.37:8080/newFood', payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
+
+      console.log('Response:', response.data); // Debug log
+
       setSuccess('Menu item added successfully!');
-      setError(null);
-      setFormData({ Name: '', Ingredients: '', Restrictions: [] }); // Reset form
+      
+      // Reset form
+      setFormData({ Name: '', Ingredients: '', Restrictions: [] });
+
+      // Redirect to manage foods after 2 seconds
+      setTimeout(() => {
+        navigate('/admin/food/manage');
+      }, 2000);
     } catch (err) {
-      setError('Failed to add menu item');
-      setSuccess(null);
-      console.error(err);
+      console.error('Error details:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Failed to add menu item. Check console for details.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Add Menu Item</h1>
-        {error && <div className="text-red-500 mb-4">{error}</div>}
-        {success && <div className="text-green-500 mb-4">{success}</div>}
-        <form onSubmit={handleSubmit}>
+    <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+      <div className="w-full max-w-2xl bg-white p-8 rounded-lg shadow-lg">
+        <h1 className="text-3xl font-semibold mb-8 text-center text-gray-800">
+          Add Menu Item
+        </h1>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6" role="alert">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6" role="alert">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6" aria-label="Add menu item form">
           {/* Name */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-2" htmlFor="Name">
-              Item Name
+          <div>
+            <label htmlFor="Name" className="block text-gray-700 font-medium mb-2">
+              Item Name *
             </label>
             <input
               type="text"
               name="Name"
+              id="Name"
               value={formData.Name}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              placeholder="Enter item name"
               required
+              disabled={loading}
             />
           </div>
 
           {/* Ingredients */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-2" htmlFor="Ingredients">
-              Ingredients
+          <div>
+            <label htmlFor="Ingredients" className="block text-gray-700 font-medium mb-2">
+              Ingredients *
             </label>
             <textarea
               name="Ingredients"
+              id="Ingredients"
               value={formData.Ingredients}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows="4"
+              className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              rows={4}
+              placeholder="List the ingredients"
               required
+              disabled={loading}
             />
           </div>
 
           {/* Restrictions */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-2">Dietary Restrictions</label>
-            <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="block text-gray-700 font-medium mb-3">Dietary Restrictions</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-4">
               {allergens.map(restriction => (
-                <label key={restriction} className="flex items-center">
+                <label key={restriction} className="flex items-center cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={formData.Restrictions.includes(restriction)}
                     onChange={() => handleRestrictionToggle(restriction)}
-                    className="mr-2"
+                    className="mr-3 h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    disabled={loading}
                   />
-                  {restriction}
+                  <span className="text-gray-600">{restriction}</span>
                 </label>
               ))}
             </div>
@@ -104,9 +154,14 @@ function Admin() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
+            disabled={loading}
+            className={`w-full py-3 rounded-md font-semibold transition ${
+              loading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
           >
-            Add Menu Item
+            {loading ? 'Adding...' : 'Add Menu Item'}
           </button>
         </form>
       </div>

@@ -1,0 +1,44 @@
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.header-title {
+  font-size: 42px;
+  margin: 0;
+  color: #1a1a1a;
+  font-weight: 700;
+  padding-left: 40px;  /* Add this line */
+
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.header-button {
+  padding: 10px 24px;
+  background-color: white;
+  border: 2px solid #16a34a;
+  border-radius: 25px;
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-button:hover {
+  background-color: #16a34a;
+  color: white;
+}
+
+.header-button:active {
+  transform: scale(0.98);
+}
