@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../config/api';
 
 function CreateCycle() {
   const [cycleName, setCycleName] = useState('');
@@ -36,7 +37,7 @@ function CreateCycle() {
         foods: []
       };
 
-      const response = await fetch('http://localhost:8080/cycles', {
+      const response = await fetch(`${API_BASE_URL}/cycles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

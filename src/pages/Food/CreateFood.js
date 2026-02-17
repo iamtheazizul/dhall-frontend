@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../config/api';
 
 function CreateFood() {
   const [formData, setFormData] = useState({
@@ -51,7 +52,7 @@ function CreateFood() {
 
       console.log('Sending payload:', payload); // Debug log
 
-      const response = await axios.post('http://localhost:8080/foods', payload, {
+      const response = await axios.post(`${API_BASE_URL}/foods`, payload, {
         headers: {
           'Content-Type': 'application/json',
         }
