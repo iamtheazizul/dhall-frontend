@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/Slideshow.css';
+import '../../styles/Slideshow.css';
 
 function Slideshow({ images, interval = 5000 }) {
   const [currentIndex, setCurrentIndex] = useState(0);

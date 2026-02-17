@@ -1,17 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../config/api'; 
 
 function AdminDashboard() {
   const [adminName, setAdminName] = useState('');
   const [activeCycle, setActiveCycle] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedAdminName = localStorage.getItem('adminName') || 'Admin';
+    const storedAdminName = localStorage.getItem('adminName') || 'Emily';
     setAdminName(storedAdminName);
 
-    const storedActiveCycle = localStorage.getItem('activeCycle');
-    setActiveCycle(storedActiveCycle || 'No active cycle');
+    // Fetch active cycle from API
+    const fetchActiveCycle = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/cycles`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch cycles');
+        }
+        
+        const cyclesData = await response.json();
+        
+        // Find the active cycle
+        const active = cyclesData.find(cycle => 
+          cycle.is_active === true || cycle.is_active === 'true'
+        );
+        
+        if (active) {
+          setActiveCycle(active.name);
+        } else {
+          setActiveCycle('No active cycle');
+        }
+      } catch (error) {
+        console.error('Error fetching active cycle:', error);
+        setActiveCycle('Error loading cycle');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActiveCycle();
   }, []);
 
   const handleLogout = () => {
@@ -67,18 +98,17 @@ function AdminDashboard() {
       <div className="absolute top-6 right-6">
         <button
           onClick={handleLogout}
-          className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded font-semibold transition shadow-md"
+          className="bg-brand-green hover:bg-brand-yellow text-white py-2 px-4 rounded font-semibold transition shadow-md"
           aria-label="Logout from admin panel"
         >
-          🚪 Logout
+          Logout
         </button>
       </div>
 
       {/* Welcome Section */}
       <div className="max-w-6xl mx-auto mb-12">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg p-8">
-          <h1 className="text-4xl font-bold mb-2">
-            Hello {adminName}, Welcome to Admin Panel
+          <div className="bg-gradient-to-r from-brand-green to-brand-green-dark text-white rounded-lg shadow-lg p-8">          <h1 className="text-4xl font-bold mb-2">
+            Hello {adminName}, welcome to admin panel!
           </h1>
           <p className="text-lg opacity-90">
             Manage your menu items and cycles from here
@@ -86,13 +116,17 @@ function AdminDashboard() {
         </div>
 
         {/* Active Cycle Info */}
-        <div className="mt-6 bg-white rounded-lg shadow p-6 border-l-4 border-blue-600">
+        <div className="mt-6 bg-white rounded-lg shadow p-6 border-l-4 border-brand-green">
           <p className="text-gray-600">
             <span className="font-semibold">Current Active Cycle:</span>
           </p>
-          <p className="text-2xl font-bold text-blue-700 mt-2">
-            {activeCycle}
-          </p>
+          {loading ? (
+            <p className="text-xl text-gray-500 mt-2 italic">Loading...</p>
+          ) : (
+            <p className="text-2xl font-bold text-brand-green-700 mt-2">
+              {activeCycle}
+            </p>
+          )}
         </div>
       </div>
 
@@ -100,15 +134,15 @@ function AdminDashboard() {
       <div className="max-w-6xl mx-auto">
         {/* Food Section */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-blue-600">
-            🍽️ Food Management
+          <h2 className="text-3xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-brand-green">
+            Food Management
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {foodOptions.map(option => (
               <Link
                 key={option.id}
                 to={option.link}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border-t-4 border-blue-500 hover:border-blue-700"
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border-t-4 border-brand-green hover:border-brand-yellow"
               >
                 <div className="text-4xl mb-4">{option.icon}</div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">
@@ -124,15 +158,15 @@ function AdminDashboard() {
 
         {/* Cycle Section */}
         <section>
-          <h2 className="text-3xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-600">
-            ⚙️ Cycle Management
+          <h2 className="text-3xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-brand-green">
+            Cycle Management
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {cycleOptions.map(option => (
               <Link
                 key={option.id}
                 to={option.link}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border-t-4 border-indigo-500 hover:border-indigo-700"
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border-t-4 border-brand-green hover:border-brand-yellow"
               >
                 <div className="text-4xl mb-4">{option.icon}</div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">

@@ -4,18 +4,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 export default function AdminSidebar() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      // Clear authentication data
-      localStorage.removeItem('adminName');
-      localStorage.removeItem('adminToken');
-      // Redirect to home
-      navigate('/');
-    }
-  };
-
   return (
-    <nav className="w-64 bg-gray-800 text-white min-h-screen p-4 flex flex-col">
+    <nav className="w-64 bg-brand-green-dark text-white min-h-screen p-4 flex flex-col">
       <h2 className="text-xl font-bold mb-8 text-center border-b border-gray-700 pb-4">
         Admin Panel
       </h2>
@@ -28,11 +18,11 @@ export default function AdminSidebar() {
             end
             className={({ isActive }) =>
               isActive
-                ? 'block px-3 py-2 bg-blue-600 rounded font-semibold'
+                ? 'block px-3 py-2 bg-brand-green rounded font-semibold'
                 : 'block px-3 py-2 hover:bg-gray-700 rounded'
             }
           >
-            📊 Dashboard
+            Dashboard
           </NavLink>
         </li>
 
@@ -47,7 +37,7 @@ export default function AdminSidebar() {
                 to="/admin/food/add"
                 className={({ isActive }) =>
                   isActive
-                    ? 'block px-3 py-2 bg-blue-600 rounded text-sm'
+                    ? 'block px-3 py-2 bg-brand-green rounded text-sm'
                     : 'block px-3 py-2 hover:bg-gray-700 rounded text-sm'
                 }
               >
@@ -59,7 +49,7 @@ export default function AdminSidebar() {
                 to="/admin/food/manage"
                 className={({ isActive }) =>
                   isActive
-                    ? 'block px-3 py-2 bg-blue-600 rounded text-sm'
+                    ? 'block px-3 py-2 bg-brand-green rounded text-sm'
                     : 'block px-3 py-2 hover:bg-gray-700 rounded text-sm'
                 }
               >
@@ -80,7 +70,7 @@ export default function AdminSidebar() {
                 to="/admin/cycle/add"
                 className={({ isActive }) =>
                   isActive
-                    ? 'block px-3 py-2 bg-blue-600 rounded text-sm'
+                    ? 'block px-3 py-2 bg-brand-green rounded text-sm'
                     : 'block px-3 py-2 hover:bg-gray-700 rounded text-sm'
                 }
               >
@@ -92,7 +82,7 @@ export default function AdminSidebar() {
                 to="/admin/cycle/manage"
                 className={({ isActive }) =>
                   isActive
-                    ? 'block px-3 py-2 bg-blue-600 rounded text-sm'
+                    ? 'block px-3 py-2 bg-brand-green rounded text-sm'
                     : 'block px-3 py-2 hover:bg-gray-700 rounded text-sm'
                 }
               >

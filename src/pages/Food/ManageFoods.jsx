@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 
 function ManageFoods() {
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const navigate = useNavigate();
-
   const allergens = ['Fish', 'Shellfish', 'Soy', 'Eggs', 'Gluten', 'Dairy', 'Sesame', 'Halal', 'Pork', 'Spicy', 'Vegetarian', 'Vegan'];
 
   useEffect(() => {
     fetchFoods();
   }, []);
 
-  // Add this to refetch whenever the page comes into focus
+  // Refetch whenever the page comes into focus
   useEffect(() => {
     const handleFocus = () => {
       fetchFoods();
@@ -27,25 +27,51 @@ function ManageFoods() {
   const fetchFoods = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://157.245.221.37:8080/foods');
-      setFoods(response.data);
-      setLoading(false);
+      setError(null);
+      const response = await fetch(`${API_BASE_URL}/foods`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setFoods(data || []);
     } catch (error) {
       console.error('Failed to fetch foods:', error);
+      setError('Failed to load foods. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (food) => {
     setEditingId(food.id);
-    setEditFormData(food);
+    setEditFormData({ ...food });
   };
 
   const handleSaveEdit = async () => {
     try {
-      await axios.put(`http://157.245.221.37:8080/foods/${editingId}`, editFormData);
-      setFoods(foods.map(f => f.id === editingId ? editFormData : f));
+      // Validate required fields
+      if (!editFormData.name?.trim()) {
+        alert('Food name is required');
+        return;
+      }
+
+      // Use query parameter instead of URL parameter
+      const response = await fetch(`${API_BASE_URL}/foods?id=${editingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editFormData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedFood = await response.json();
+      setFoods(foods.map(f => f.id === editingId ? updatedFood : f));
       setEditingId(null);
+      setEditFormData({});
       alert('Food item updated successfully!');
     } catch (error) {
       console.error('Failed to update food:', error);
@@ -56,7 +82,15 @@ function ManageFoods() {
   const handleDelete = async (foodId) => {
     if (window.confirm('Are you sure you want to delete this food item?')) {
       try {
-        await axios.delete(`http://157.245.221.37:8080/foods/${foodId}`);
+        // Use query parameter instead of URL parameter
+        const response = await fetch(`${API_BASE_URL}/foods?id=${foodId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         setFoods(foods.filter(f => f.id !== foodId));
         alert('Food item deleted successfully!');
       } catch (error) {
@@ -68,15 +102,20 @@ function ManageFoods() {
 
   const handleRestrictionToggle = (restriction) => {
     setEditFormData(prev => {
-      const restrictions = prev.Restrictions?.includes(restriction)
-        ? prev.Restrictions.filter(r => r !== restriction)
-        : [...(prev.Restrictions || []), restriction];
-      return { ...prev, Restrictions: restrictions };
+      const restrictions = prev.restrictions?.includes(restriction)
+        ? prev.restrictions.filter(r => r !== restriction)
+        : [...(prev.restrictions || []), restriction];
+      return { ...prev, restrictions };
     });
   };
 
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditFormData({});
+  };
+
   if (loading) {
-    return <div className="p-6">Loading food items...</div>;
+    return <div className="p-6 text-center text-gray-500">Loading food items...</div>;
   }
 
   return (
@@ -91,6 +130,18 @@ function ManageFoods() {
             + Add New Food
           </button>
         </div>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            {error}
+            <button
+              onClick={fetchFoods}
+              className="ml-4 underline font-semibold hover:no-underline"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {foods.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
@@ -107,22 +158,20 @@ function ManageFoods() {
                       <label className="block text-gray-700 font-medium mb-2">Name</label>
                       <input
                         type="text"
-                        value={editFormData.Name || ''}
-                        onChange={(e) => setEditFormData({ ...editFormData, Name: e.target.value })}
+                        value={editFormData.name || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
-
                     <div>
                       <label className="block text-gray-700 font-medium mb-2">Ingredients</label>
                       <textarea
-                        value={editFormData.Ingredients || ''}
-                        onChange={(e) => setEditFormData({ ...editFormData, Ingredients: e.target.value })}
+                        value={editFormData.ingredients || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, ingredients: e.target.value })}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         rows={3}
                       />
                     </div>
-
                     <div>
                       <span className="block text-gray-700 font-medium mb-2">Dietary Restrictions</span>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -130,7 +179,7 @@ function ManageFoods() {
                           <label key={restriction} className="flex items-center cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={editFormData.Restrictions?.includes(restriction) || false}
+                              checked={editFormData.restrictions?.includes(restriction) || false}
                               onChange={() => handleRestrictionToggle(restriction)}
                               className="mr-2 h-4 w-4 text-blue-600 rounded"
                             />
@@ -139,7 +188,6 @@ function ManageFoods() {
                         ))}
                       </div>
                     </div>
-
                     <div className="flex gap-3 pt-4">
                       <button
                         onClick={handleSaveEdit}
@@ -148,7 +196,7 @@ function ManageFoods() {
                         Save Changes
                       </button>
                       <button
-                        onClick={() => setEditingId(null)}
+                        onClick={handleCancelEdit}
                         className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-md font-semibold"
                       >
                         Cancel
@@ -159,12 +207,12 @@ function ManageFoods() {
                   // View Mode
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">{food.Name}</h3>
+                      <h3 className="text-xl font-bold text-gray-800 mb-2">{food.name}</h3>
                       <p className="text-gray-600 mb-3">
-                        <span className="font-semibold">Ingredients:</span> {food.Ingredients}
+                        <span className="font-semibold">Ingredients:</span> {food.ingredients}
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {food.Restrictions?.map(restriction => (
+                        {food.restrictions?.map(restriction => (
                           <span
                             key={restriction}
                             className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
@@ -174,7 +222,6 @@ function ManageFoods() {
                         ))}
                       </div>
                     </div>
-
                     <div className="flex gap-2 ml-4">
                       <button
                         onClick={() => handleEdit(food)}

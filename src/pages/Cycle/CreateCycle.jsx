@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 function CreateCycle() {
   const [cycleName, setCycleName] = useState('');
+  const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [error, setError] = useState(null);
@@ -16,7 +17,7 @@ function CreateCycle() {
     setSuccess(null);
 
     if (!cycleName.trim() || !startDate || !endDate) {
-      setError('All fields are required');
+      setError('Cycle name, start date, and end date are required');
       return;
     }
 
@@ -26,39 +27,37 @@ function CreateCycle() {
     }
 
     setLoading(true);
-
     try {
-      // Create new cycle object
       const newCycle = {
-        id: Date.now(),
         name: cycleName.trim(),
-        startDate,
-        endDate,
-        createdAt: new Date().toISOString()
+        description: description.trim(),
+        start_date: new Date(startDate).toISOString().split('T')[0] + 'T00:00:00Z',
+        end_date: new Date(endDate).toISOString().split('T')[0] + 'T23:59:59Z',
+        foods: []
       };
 
-      // Get existing cycles
-      const existingCycles = JSON.parse(localStorage.getItem('cycles') || '[]');
-      
-      // Check for duplicate names
-      if (existingCycles.some(c => c.name.toLowerCase() === cycleName.toLowerCase())) {
-        setError('A cycle with this name already exists');
-        setLoading(false);
-        return;
+      const response = await fetch('http://localhost:8080/cycles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCycle)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
-      // Add new cycle
-      existingCycles.push(newCycle);
-      localStorage.setItem('cycles', JSON.stringify(existingCycles));
-
+      const createdCycle = await response.json();
       setSuccess('Cycle created successfully! Redirecting...');
-      
+
       // Redirect after 1.5 seconds
       setTimeout(() => {
         navigate('/admin/cycle/manage');
       }, 1500);
     } catch (err) {
-      setError('Failed to create cycle. Please try again.');
+      setError(err.message || 'Failed to create cycle. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -95,8 +94,24 @@ function CreateCycle() {
               value={cycleName}
               onChange={(e) => setCycleName(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              placeholder="e.g., Fall 2024 Menu, Winter Break Menu"
+              placeholder="e.g., Fall 2025 Week 1"
               required
+              disabled={loading}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block text-gray-700 font-medium mb-2">
+              Description
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
+              placeholder="e.g., Additional details about this cycle"
+              rows="3"
               disabled={loading}
             />
           </div>
@@ -158,7 +173,7 @@ function CreateCycle() {
         </form>
 
         <p className="text-sm text-gray-500 mt-6 text-center">
-          After creating a cycle, you'll be able to configure its menu items.
+          After creating a cycle, you'll be able to add food items and assign them to mealtimes.
         </p>
       </div>
     </div>

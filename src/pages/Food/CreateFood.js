@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-function Admin() {
+function CreateFood() {
   const [formData, setFormData] = useState({
     Name: '',
     Ingredients: '',
@@ -51,7 +51,7 @@ function Admin() {
 
       console.log('Sending payload:', payload); // Debug log
 
-      const response = await axios.post('http://157.245.221.37:8080/newFood', payload, {
+      const response = await axios.post('http://localhost:8080/foods', payload, {
         headers: {
           'Content-Type': 'application/json',
         }
@@ -169,4 +169,4 @@ function Admin() {
   );
 }
 
-export default Admin;
+export default CreateFood;

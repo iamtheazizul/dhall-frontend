@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../styles/MenuGrid.css';
+import '../../styles/MenuGrid.css';
 
 // Dietary restriction icons mapping
 const dietaryIcons = {

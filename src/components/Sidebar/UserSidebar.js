@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import '../styles/Sidebar.css';
+import '../../styles/Sidebar.css';
 
-function Sidebar({
+function UserSidebar({
   stations,
   selectedStations,
   onToggleStation,
@@ -137,4 +137,4 @@ function Sidebar({
   );
 }
 
-export default Sidebar;
+export default UserSidebar;
