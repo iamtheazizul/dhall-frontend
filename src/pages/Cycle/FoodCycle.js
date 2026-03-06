@@ -4,8 +4,8 @@ import FoodPickerModal from '../../components/Admin/FoodPickerModal';
 import { API_BASE_URL } from '../../config/api';
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const mealPeriods = ['Breakfast', 'Lunch', 'Dinner'];
-const stations = ['Diner', "Emily's", 'Global'];
+const mealPeriods = ['Breakfast', 'Lunch', 'Dinner', 'Late Night'];
+const stations = ['Diner', "Emily's Garden", 'Global/Noodle Bar', 'Minus 9', 'The Corner Deli', "Supremo's"];
 
 function FoodCycle() {
   const { cycleId } = useParams();

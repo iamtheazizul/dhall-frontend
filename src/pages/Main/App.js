@@ -517,8 +517,8 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const stations = ['Diner', "Emily's Garden", 'Global'];
-  const timePeriods = ['Breakfast', 'Lunch', 'Dinner'];
+  const stations = ['Diner', "Emily's Garden", 'Global/Noodle Bar', 'Minus 9', 'The Corner Deli', "Supremo's"];
+  const timePeriods = ['Breakfast', 'Lunch', 'Dinner', 'Late Night'];
   const allergens = ['Fish', 'Shellfish', 'Soy', 'Eggs', 'Gluten', 'Dairy', 'Sesame', 'Halal', 'Pork', 'Spicy', 'Vegetarian', 'Vegan'];
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -526,7 +526,7 @@ function App() {
     {
       url: eventImage,
       alt: 'Event image',
-      caption: 'Harry Potter Themed Dinner This Week'
+      caption: 'Free Dinner for Seniors (courtesy of SGC)'
     },
     {
       url: rankingImage,
@@ -536,7 +536,7 @@ function App() {
     {
       url: themeImage,
       alt: 'Theme image',
-      caption: 'Free Dinner for Seniors (courtesy of SEC)'
+      caption: 'Harry Potter Themed Dinner This Week'
     }
   ];
 
@@ -682,7 +682,7 @@ function App() {
   const currentDayIndex = getCurrentDayIndex();
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', minHeight: '100vh' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', minHeight: '100vh', overflow: 'visible' }}>
       <Sidebar 
         stations={stations} 
         selectedStations={filters.stations} 
@@ -701,7 +701,8 @@ function App() {
         backgroundColor: '#f8f9fa',
         marginLeft: isSidebarCollapsed ? '0' : '280px',
         transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        minHeight: '100vh'
+        minHeight: '100vh',
+        overflow: 'visible'
       }}
       className="main-content"
       >
@@ -709,14 +710,8 @@ function App() {
         <Slideshow images={slideshowImages} interval={5000} />
 
         {/* Currently viewing day indicator */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '30px',
-          fontSize: '18px',
-          color: '#16a34a',
-          fontWeight: '600'
-        }}>
-          Menu for {days[currentDayIndex]} ({activeCycle?.name})
+        <div className="text-center mb-8 text-lg text-brand-green font-semibold">
+        Menu for {days[currentDayIndex]} ({activeCycle?.name})
         </div>
 
         {/* Search Bar */}
@@ -802,15 +797,7 @@ function App() {
           stations.map(station => (
             menuByStation[station] && menuByStation[station].length > 0 && (
               <section key={station} style={{ marginBottom: '50px' }}>
-                <h2 style={{ 
-                  fontSize: '24px', 
-                  marginBottom: '20px', 
-                  color: '#16a34a',
-                  fontWeight: '700',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}>
+                <h2 className="text-2xl mb-5 text-brand-green font-bold flex items-center gap-2.5">
                   {station}
                   <span style={{
                     fontSize: '14px',
@@ -825,7 +812,7 @@ function App() {
                 </h2>
                 <div style={{
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'visible'
                 }}>
                   <div 
                     className="menu-carousel"
@@ -833,9 +820,8 @@ function App() {
                       display: 'flex',
                       gap: '20px',
                       overflowX: 'auto',
-                      overflowY: 'hidden',
+                      overflowY: 'visible',
                       scrollBehavior: 'smooth',
-                      paddingBottom: '10px',
                       WebkitOverflowScrolling: 'touch',
                       scrollbarWidth: 'thin',
                       scrollbarColor: '#cbd5e0 #f1f5f9'

@@ -23,6 +23,7 @@ function ManageCycles() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const cyclesData = await response.json();
+      cyclesData.sort((a, b) => a.order - b.order);
       setCycles(cyclesData);
     } catch (err) {
       setError('Failed to load cycles. Please try again.');
@@ -36,40 +37,41 @@ function ManageCycles() {
     navigate(`/admin/cycle/${cycleId}/configure`);
   };
 
-  // Optimized: Update active cycle in backend
   const handleStartCycle = async (cycleId) => {
     try {
-      // First, deactivate all cycles
-      const deactivatePromises = cycles
-        .filter(c => c.is_active)
-        .map(c =>
-          fetch(`${API_BASE_URL}/cycles?id=${c.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...c, is_active: false })
-          })
-        );
-
-      await Promise.all(deactivatePromises);
-
-      // Then activate the selected cycle
       const cycleToActivate = cycles.find(c => c.id === cycleId);
-      const response = await fetch(`${API_BASE_URL}/cycles?id=${cycleId}`, {
+      const currentActiveCycle = cycles.find(c => c.is_active);
+      
+      const tempOrder = cycleToActivate.order;
+      
+      const updatedCycleToActivate = {
+        ...cycleToActivate,
+        order: currentActiveCycle?.order || 1,
+        is_active: true,
+        activated_at: new Date().toISOString()
+      };
+      
+      const updatedCurrentCycle = {
+        ...currentActiveCycle,
+        order: tempOrder,
+        is_active: false
+      };
+      
+      await fetch(`${API_BASE_URL}/cycles?id=${cycleToActivate.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...cycleToActivate, is_active: true })
+        body: JSON.stringify(updatedCycleToActivate)
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to set active cycle');
+      
+      if (currentActiveCycle) {
+        await fetch(`${API_BASE_URL}/cycles?id=${currentActiveCycle.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedCurrentCycle)
+        });
       }
-
-      // Update local state
-      const updatedCycles = cycles.map(c => ({
-        ...c,
-        is_active: c.id === cycleId
-      }));
-      setCycles(updatedCycles);
+      
+      fetchCycles();
       alert('Cycle set as active!');
     } catch (err) {
       alert('Failed to set active cycle. Please try again.');
@@ -86,8 +88,7 @@ function ManageCycles() {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const updatedCycles = cycles.filter(c => c.id !== cycleId);
-        setCycles(updatedCycles);
+        fetchCycles();
       } catch (err) {
         alert('Failed to delete cycle. Please try again.');
         console.error(err);
@@ -100,8 +101,7 @@ function ManageCycles() {
     setEditFormData({
       name: cycle.name,
       description: cycle.description,
-      start_date: cycle.start_date.split('T')[0],
-      end_date: cycle.end_date.split('T')[0]
+      order: cycle.order
     });
   };
 
@@ -110,8 +110,8 @@ function ManageCycles() {
       alert('Cycle name is required');
       return;
     }
-    if (new Date(editFormData.start_date) >= new Date(editFormData.end_date)) {
-      alert('Start date must be before end date');
+    if (editFormData.order < 1) {
+      alert('Order must be at least 1');
       return;
     }
     try {
@@ -120,8 +120,7 @@ function ManageCycles() {
         ...cycle,
         name: editFormData.name.trim(),
         description: editFormData.description.trim(),
-        start_date: new Date(editFormData.start_date).toISOString().split('T')[0] + 'T00:00:00Z',
-        end_date: new Date(editFormData.end_date).toISOString().split('T')[0] + 'T23:59:59Z'
+        order: editFormData.order
       };
       const response = await fetch(`${API_BASE_URL}/cycles?id=${cycleId}`, {
         method: 'PUT',
@@ -131,13 +130,9 @@ function ManageCycles() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const updatedCycleData = await response.json();
-      const updatedCycles = cycles.map(c =>
-        c.id === cycleId ? updatedCycleData : c
-      );
-      setCycles(updatedCycles);
       setEditingCycleId(null);
       setEditFormData({});
+      fetchCycles();
     } catch (err) {
       alert('Failed to update cycle. Please try again.');
       console.error(err);
@@ -151,11 +146,12 @@ function ManageCycles() {
 
   const handleDuplicateCycle = async (cycle) => {
     try {
+      const maxOrder = Math.max(...cycles.map(c => c.order), 0);
+      
       const newCycle = {
         name: `${cycle.name} (Copy)`,
         description: cycle.description,
-        start_date: cycle.start_date,
-        end_date: cycle.end_date,
+        order: maxOrder + 1,
         is_active: false,
         days: cycle.days || []
       };
@@ -167,12 +163,71 @@ function ManageCycles() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const createdCycle = await response.json();
-      setCycles([...cycles, createdCycle]);
-      alert(`Cycle duplicated successfully as "${createdCycle.name}"`);
+      fetchCycles();
+      alert(`Cycle duplicated as "${newCycle.name}"`);
     } catch (err) {
       alert('Failed to duplicate cycle. Please try again.');
       console.error(err);
+    }
+  };
+
+  const handleMoveUp = async (cycle) => {
+    const sortedCycles = [...cycles].sort((a, b) => a.order - b.order);
+    const currentIndex = sortedCycles.findIndex(c => c.id === cycle.id);
+    
+    if (currentIndex > 0) {
+      const temp = sortedCycles[currentIndex].order;
+      sortedCycles[currentIndex].order = sortedCycles[currentIndex - 1].order;
+      sortedCycles[currentIndex - 1].order = temp;
+      
+      try {
+        await fetch(`${API_BASE_URL}/cycles?id=${sortedCycles[currentIndex].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sortedCycles[currentIndex])
+        });
+        
+        await fetch(`${API_BASE_URL}/cycles?id=${sortedCycles[currentIndex - 1].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sortedCycles[currentIndex - 1])
+        });
+        
+        fetchCycles();
+      } catch (err) {
+        alert('Failed to reorder cycles');
+        console.error(err);
+      }
+    }
+  };
+
+  const handleMoveDown = async (cycle) => {
+    const sortedCycles = [...cycles].sort((a, b) => a.order - b.order);
+    const currentIndex = sortedCycles.findIndex(c => c.id === cycle.id);
+    
+    if (currentIndex < sortedCycles.length - 1) {
+      const temp = sortedCycles[currentIndex].order;
+      sortedCycles[currentIndex].order = sortedCycles[currentIndex + 1].order;
+      sortedCycles[currentIndex + 1].order = temp;
+      
+      try {
+        await fetch(`${API_BASE_URL}/cycles?id=${sortedCycles[currentIndex].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sortedCycles[currentIndex])
+        });
+        
+        await fetch(`${API_BASE_URL}/cycles?id=${sortedCycles[currentIndex + 1].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sortedCycles[currentIndex + 1])
+        });
+        
+        fetchCycles();
+      } catch (err) {
+        alert('Failed to reorder cycles');
+        console.error(err);
+      }
     }
   };
 
@@ -182,9 +237,12 @@ function ManageCycles() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Manage Cycles</h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Manage Cycles</h1>
+            <p className="text-gray-600 mt-1">Cycles rotate automatically every Saturday at midnight</p>
+          </div>
           <button
             onClick={() => navigate('/admin/cycle/add')}
             className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-semibold transition"
@@ -216,9 +274,11 @@ function ManageCycles() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
             {cycles.map(cycle => {
               const isActive = cycle.is_active === true;
+              const minOrder = Math.min(...cycles.map(c => c.order));
+              const maxOrder = Math.max(...cycles.map(c => c.order));
               
               return (
                 <div
@@ -266,27 +326,15 @@ function ManageCycles() {
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          Start Date
+                          Rotation Order
                         </label>
                         <input
-                          type="date"
-                          value={editFormData.start_date}
+                          type="number"
+                          value={editFormData.order}
                           onChange={(e) =>
-                            setEditFormData({ ...editFormData, start_date: e.target.value })
+                            setEditFormData({ ...editFormData, order: parseInt(e.target.value) || 1 })
                           }
-                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          End Date
-                        </label>
-                        <input
-                          type="date"
-                          value={editFormData.end_date}
-                          onChange={(e) =>
-                            setEditFormData({ ...editFormData, end_date: e.target.value })
-                          }
+                          min="1"
                           className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -308,60 +356,85 @@ function ManageCycles() {
                   ) : (
                     // Display View
                     <>
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">{cycle.name}</h3>
-                      {cycle.description && (
-                        <p className="text-gray-600 mb-3 text-sm">{cycle.description}</p>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-800 mb-2">{cycle.name}</h3>
+                          {cycle.description && (
+                            <p className="text-gray-600 mb-3 text-sm">{cycle.description}</p>
+                          )}
+                        </div>
+                        
+                        {/* Up/Down Arrows */}
+                        <div className="flex gap-1 ml-4">
+                          <button
+                            onClick={() => handleMoveUp(cycle)}
+                            disabled={cycle.order === minOrder}
+                            className={`w-10 h-10 flex items-center justify-center rounded text-white transition ${
+                              cycle.order === minOrder
+                                ? 'bg-gray-300 cursor-not-allowed'
+                                : 'bg-gray-600 hover:bg-gray-700'
+                            }`}
+                            title="Move up in rotation"
+                          >
+                            ⬆
+                          </button>
+                          <button
+                            onClick={() => handleMoveDown(cycle)}
+                            disabled={cycle.order === maxOrder}
+                            className={`w-10 h-10 flex items-center justify-center rounded text-white transition ${
+                              cycle.order === maxOrder
+                                ? 'bg-gray-300 cursor-not-allowed'
+                                : 'bg-gray-600 hover:bg-gray-700'
+                            }`}
+                            title="Move down in rotation"
+                          >
+                            ⬇
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="text-gray-600 mb-1 text-sm">
+                        <span className="font-semibold">Order:</span> {cycle.order}
+                      </p>
+                      {cycle.activated_at && (
+                        <p className="text-gray-600 mb-4 text-sm">
+                          <span className="font-semibold">Last Activated:</span>{' '}
+                          {new Date(cycle.activated_at).toLocaleDateString()}
+                        </p>
                       )}
-                      <p className="text-gray-600 mb-1">
-                        <span className="font-semibold">Start Date:</span>{' '}
-                        {new Date(cycle.start_date).toLocaleDateString()}
-                      </p>
-                      <p className="text-gray-600 mb-4">
-                        <span className="font-semibold">End Date:</span>{' '}
-                        {new Date(cycle.end_date).toLocaleDateString()}
-                      </p>
 
                       <div className="flex gap-3 flex-wrap mt-4">
                         <button
                           onClick={() => handleConfigureCycle(cycle.id)}
-                          className="flex items-center justify-center gap-2 flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md font-semibold text-sm transition"
-                          title="Configure this cycle"
+                          className="flex-1 min-w-[140px] bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md font-semibold text-sm transition"
                         >
                           ⚙️ Configure
                         </button>
-
                         {!isActive && (
                           <button
                             onClick={() => handleStartCycle(cycle.id)}
-                            className="flex items-center justify-center gap-2 flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-semibold text-sm transition"
-                            title="Set as active cycle"
+                            className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-semibold text-sm transition"
                           >
                             ▶️ Start
                           </button>
                         )}
-
                         <button
                           onClick={() => handleEditClick(cycle)}
-                          className="flex items-center justify-center w-10 h-10 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md font-semibold transition"
-                          title="Edit cycle"
+                          className="flex-1 min-w-[100px] bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded-md font-semibold text-sm transition"
                         >
-                          ✏️
+                          ✏️ Edit
                         </button>
-
                         <button
                           onClick={() => handleDuplicateCycle(cycle)}
-                          className="flex items-center justify-center w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-semibold transition"
-                          title="Duplicate this cycle"
+                          className="flex-1 min-w-[100px] bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-md font-semibold text-sm transition"
                         >
-                          📋
+                          📋 Copy
                         </button>
-
                         <button
                           onClick={() => handleDeleteCycle(cycle.id)}
-                          className="flex items-center justify-center w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-md font-semibold transition"
-                          title="Delete this cycle"
+                          className="flex-1 min-w-[100px] bg-red-600 hover:bg-red-700 text-white py-2 rounded-md font-semibold text-sm transition"
                         >
-                          🗑️
+                          🗑️ Delete
                         </button>
                       </div>
                     </>

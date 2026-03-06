@@ -1,29 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config/api';
 
 function CreateCycle() {
   const [cycleName, setCycleName] = useState('');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [order, setOrder] = useState(1);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch existing cycles to suggest next order number
+  useEffect(() => {
+    const fetchCycles = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/cycles`);
+        if (response.ok) {
+          const cycles = await response.json();
+          // Suggest the next order number
+          const maxOrder = Math.max(...cycles.map(c => c.order || 0), 0);
+          setOrder(maxOrder + 1);
+        }
+      } catch (err) {
+        console.error('Error fetching cycles:', err);
+      }
+    };
+    fetchCycles();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
-    if (!cycleName.trim() || !startDate || !endDate) {
-      setError('Cycle name, start date, and end date are required');
+    if (!cycleName.trim()) {
+      setError('Cycle name is required');
       return;
     }
 
-    if (new Date(startDate) >= new Date(endDate)) {
-      setError('Start date must be before end date');
+    if (order < 1) {
+      setError('Order must be at least 1');
       return;
     }
 
@@ -32,10 +49,9 @@ function CreateCycle() {
       const newCycle = {
         name: cycleName.trim(),
         description: description.trim(),
-        start_date: new Date(startDate).toISOString().split('T')[0] + 'T00:00:00Z',
-        end_date: new Date(endDate).toISOString().split('T')[0] + 'T23:59:59Z',
+        order: order,
         is_active: false,
-        foods: []
+        days: []
       };
 
       const response = await fetch(`${API_BASE_URL}/cycles`, {
@@ -51,10 +67,8 @@ function CreateCycle() {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
-      const createdCycle = await response.json();
       setSuccess('Cycle created successfully! Redirecting...');
 
-      // Redirect after 1.5 seconds
       setTimeout(() => {
         navigate('/admin/cycle/manage');
       }, 1500);
@@ -70,7 +84,9 @@ function CreateCycle() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Create New Cycle</h1>
-        <p className="text-gray-600 mb-8">Set up a new menu cycle with start and end dates</p>
+        <p className="text-gray-600 mb-8">
+          Set up a new menu cycle. Cycles rotate automatically every Saturday at midnight.
+        </p>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
@@ -96,7 +112,7 @@ function CreateCycle() {
               value={cycleName}
               onChange={(e) => setCycleName(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              placeholder="e.g., Fall 2025 Week 1"
+              placeholder="e.g., Winter Menu, Spring Week 1"
               required
               disabled={loading}
             />
@@ -112,42 +128,30 @@ function CreateCycle() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
-              placeholder="e.g., Additional details about this cycle"
+              placeholder="Optional: Add notes about this cycle"
               rows="3"
               disabled={loading}
             />
           </div>
 
-          {/* Start Date */}
+          {/* Order */}
           <div>
-            <label htmlFor="startDate" className="block text-gray-700 font-medium mb-2">
-              Start Date *
+            <label htmlFor="order" className="block text-gray-700 font-medium mb-2">
+              Rotation Order *
             </label>
             <input
-              type="date"
-              id="startDate"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              type="number"
+              id="order"
+              value={order}
+              onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
+              min="1"
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               required
               disabled={loading}
             />
-          </div>
-
-          {/* End Date */}
-          <div>
-            <label htmlFor="endDate" className="block text-gray-700 font-medium mb-2">
-              End Date *
-            </label>
-            <input
-              type="date"
-              id="endDate"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              required
-              disabled={loading}
-            />
+            <p className="text-sm text-gray-500 mt-1">
+              Cycles rotate in order: 1 → 2 → 3 → 1... (Lower numbers come first)
+            </p>
           </div>
 
           {/* Buttons */}
@@ -175,7 +179,7 @@ function CreateCycle() {
         </form>
 
         <p className="text-sm text-gray-500 mt-6 text-center">
-          After creating a cycle, you'll be able to add food items and assign them to mealtimes.
+          After creating a cycle, configure its daily menus and set it as active.
         </p>
       </div>
     </div>

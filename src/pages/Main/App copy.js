@@ -430,3 +430,50 @@
 // }
 
 // export default App;
+
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<App />} />
+        <Route path="/login" element={<Login />} /> {/* NEW */}
+        
+        Protected admin routes
+        <Route path="/admin" element={
+          <ProtectedRoute> {/* NEW: Wrap with protection */}
+            <AdminLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="food/add" element={<CreateFood />} />
+          <Route path="food/manage" element={<ManageFoods />} />
+          <Route path="cycle/add" element={<CreateCycle />} />
+          <Route path="cycle/manage" element={<ManageCycles />} />
+          <Route path="cycle/:cycleId/configure" element={<FoodCycle />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Route>
+        
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+
+    {/* <AuthProvider> NEW: Wrap everything */}
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<App />} />
+      {/* <Route path="/login" element={<Login />} /> */}
+      <Route path="/hours" element={<HoursPage />} />
+      {/* Admin routes - TEMPORARILY UNPROTECTED */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="food/add" element={<CreateFood />} />
+        <Route path="food/manage" element={<ManageFoods />} />
+        <Route path="cycle/add" element={<CreateCycle />} />
+        <Route path="cycle/manage" element={<ManageCycles />} />
+        <Route path="cycle/:cycleId/configure" element={<FoodCycle />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+
+      </Route>
+      
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+    {/* </AuthProvider> */}

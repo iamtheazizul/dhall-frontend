@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config/api'; 
+import { useAuth } from '../../context/AuthContext'; // Add this import
 
 function AdminDashboard() {
+  const { user, logout } = useAuth(); // Add this
   const [adminName, setAdminName] = useState('');
   const [activeCycle, setActiveCycle] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedAdminName = localStorage.getItem('adminName') || 'Emily';
-    setAdminName(storedAdminName);
+    // Use Okta user name if available
+    if (user && user.name) {
+      setAdminName(user.name);
+    } else {
+      const storedAdminName = localStorage.getItem('adminName') || 'Admin';
+      setAdminName(storedAdminName);
+    }
+    // const storedAdminName = localStorage.getItem('adminName') || 'Admin';
+    // setAdminName(storedAdminName);
+
 
     // Fetch active cycle from API
     const fetchActiveCycle = async () => {
@@ -43,16 +53,25 @@ function AdminDashboard() {
     };
 
     fetchActiveCycle();
-  }, []);
+  }, [user]);
+  // }, []);
+
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      localStorage.removeItem('adminName');
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('activeCycleId');
-      navigate('/');
+      logout(); // Use Okta logout
     }
   };
+
+
+  // const handleLogout = () => {
+  //   if (window.confirm('Are you sure you want to logout?')) {
+  //     localStorage.removeItem('adminName');
+  //     localStorage.removeItem('adminToken');
+  //     navigate('/');
+  //   }
+  // };
+
 
   const dashboardOptions = [
     {

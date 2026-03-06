@@ -102,7 +102,7 @@ function MenuGrid({ items }) {
 
             {/* Center: Description and Allergens */}
             <div className="modal-body">
-              <p className="modal-description">{selectedItem.description}</p>
+              {/* <p className="modal-description">{selectedItem.description}</p> */}
               
               {selectedItem.allergens && selectedItem.allergens.length > 0 && (
                 <div className="modal-allergens">

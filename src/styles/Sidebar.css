@@ -3,7 +3,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  background: linear-gradient(180deg, #006A52 0%, #22372B 100%); /* Changed */
   color: white;
   height: 100vh;
   overflow-y: auto;
@@ -49,7 +49,7 @@
   width: 36px;
   height: 36px;
   background: white;
-  border: 2px solid #16a34a;
+  border: 2px solid #006A52; /* Changed */
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -75,7 +75,7 @@
 .toggle-icon {
   font-size: 20px;
   font-weight: bold;
-  color: #16a34a;
+  color: #006A52; /* Changed */
   transition: all 0.3s ease;
 }
 
@@ -199,8 +199,8 @@
 }
 
 .filter-checkbox:checked ~ .checkmark {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+  background: linear-gradient(135deg, #33C572 0%, #006A52 100%); /* Changed */
+  box-shadow: 0 2px 8px rgba(0, 106, 82, 0.4); /* Changed */
 }
 
 /* Checkmark icon */

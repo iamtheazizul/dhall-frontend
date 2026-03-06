@@ -1,6 +1,5 @@
-const axios = require('axios');
-
-const API_BASE_URL = 'https://dhallbackend-production.up.railway.app'; // Change if needed
+import axios from 'axios';
+import { API_BASE_URL } from './config/api.js';
 
 const foods = [
   { name: 'Peruvian Fries with Spicy Chorizo Tofu & Pigeon Peas', restrictions: ['Spicy', 'Vegan', 'Soy'] },
