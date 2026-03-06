@@ -394,6 +394,8 @@ function ManageFoods() {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',  // ← This line is crucial!
+
         body: JSON.stringify(editFormData)
       });
 
@@ -416,7 +418,9 @@ function ManageFoods() {
     if (window.confirm('Are you sure you want to delete this food item?')) {
       try {
         const response = await fetch(`${API_BASE_URL}/foods?id=${foodId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          credentials: 'include',  // ← This line is crucial!
+
         });
 
         if (!response.ok) {

@@ -60,12 +60,14 @@ function ManageCycles() {
       await fetch(`${API_BASE_URL}/cycles?id=${cycleToActivate.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',  // ← This line is crucial!
         body: JSON.stringify(updatedCycleToActivate)
       });
       
       if (currentActiveCycle) {
         await fetch(`${API_BASE_URL}/cycles?id=${currentActiveCycle.id}`, {
           method: 'PUT',
+          credentials: 'include',  // ← This line is crucial!
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedCurrentCycle)
         });
@@ -83,7 +85,8 @@ function ManageCycles() {
     if (window.confirm('Are you sure you want to delete this cycle? This action cannot be undone.')) {
       try {
         const response = await fetch(`${API_BASE_URL}/cycles?id=${cycleId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          credentials: 'include',  // ← This line is crucial!
         });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -125,7 +128,8 @@ function ManageCycles() {
       const response = await fetch(`${API_BASE_URL}/cycles?id=${cycleId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedCycle)
+        body: JSON.stringify(updatedCycle),
+        credentials: 'include',  // ← This line is crucial
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -158,6 +162,7 @@ function ManageCycles() {
       const response = await fetch(`${API_BASE_URL}/cycles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',  // ← This line is crucial!
         body: JSON.stringify(newCycle)
       });
       if (!response.ok) {
@@ -184,12 +189,14 @@ function ManageCycles() {
         await fetch(`${API_BASE_URL}/cycles?id=${sortedCycles[currentIndex].id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',  // ← This line is crucial
           body: JSON.stringify(sortedCycles[currentIndex])
         });
         
         await fetch(`${API_BASE_URL}/cycles?id=${sortedCycles[currentIndex - 1].id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',  // ← This line is crucial!
           body: JSON.stringify(sortedCycles[currentIndex - 1])
         });
         
@@ -214,12 +221,15 @@ function ManageCycles() {
         await fetch(`${API_BASE_URL}/cycles?id=${sortedCycles[currentIndex].id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',  // ← This line is crucial!
+
           body: JSON.stringify(sortedCycles[currentIndex])
         });
         
         await fetch(`${API_BASE_URL}/cycles?id=${sortedCycles[currentIndex + 1].id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',  // ← This line is crucial!
           body: JSON.stringify(sortedCycles[currentIndex + 1])
         });
         
